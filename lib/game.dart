@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sudoku_api/sudoku_api.dart';
-import 'package:sudoku_starter/smallGrid.dart';
+
+import 'oneGrid.dart';
 
 class Game extends StatefulWidget {
   const Game({Key? key, required this.title}) : super(key: key);
@@ -22,9 +23,22 @@ class Game extends StatefulWidget {
 
 class _GameState extends State<Game> {
   int _counter = 0;
-  Grid? _sudoku;
-  late Puzzle puzzle;
+  late Puzzle sudoku;
+  int _xSelect = -1;
+  int _ySelect = -1;
 
+  @override
+  void initState() {
+    super.initState();
+    PuzzleOptions sudokuOptions = new PuzzleOptions();
+    sudoku = new Puzzle(sudokuOptions);
+    generateSudoku();
+  }
+
+  Future<void> generateSudoku() async {
+    await sudoku.generate();
+    setState(() {});
+  }
 
   void _incrementCounter() {
     setState(() {
@@ -37,20 +51,16 @@ class _GameState extends State<Game> {
     });
   }
 
-  @override
-  void initState(){
-    super.initState();
-    PuzzleOptions puzzleOptions = new PuzzleOptions();
-    puzzle= new Puzzle(puzzleOptions);
-    generateSudoku();
-  }
-
-  Future<void> generateSudoku() async{
-    await puzzle.generate();
+  void changeColor(x,y) {
     setState(() {
+      _xSelect = x;
+      _ySelect= y;
     });
   }
 
+  bool isSelected(x,y) {
+    return _xSelect == x && _ySelect == y;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,20 +103,39 @@ class _GameState extends State<Game> {
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             SizedBox(
-              width: boxSize * 3,
-              height: boxSize * 3,
-              child: GridView.count(
-                crossAxisCount: 3,
-                children: List.generate(9, (x) {
-                  return Container(
-                    width: boxSize,
-                    height: boxSize,
-                    decoration: BoxDecoration(border: Border.all(color: Colors.blueAccent)),
-                    child: SmallGrid(gridValues: List.generate(9, (y) => puzzle.board()?.matrix()?[x][y].getValue() ?? 0)));
-                })
-                ,
-              )
-            )
+                width: boxSize * 3,
+                height: boxSize * 3,
+                child: GridView.count(
+                    crossAxisCount: 3,
+                    children: List.generate(9, (x) {
+                      return Container(
+                          width: boxSize,
+                          height: boxSize,
+                          decoration: BoxDecoration(
+                              border: Border.all(color: Colors.blueAccent)),
+                          child: SizedBox(
+                            width: boxSize * 3,
+                            height: boxSize * 3,
+                            child: GridView.count(
+                              crossAxisCount: 3,
+                              children: List.generate(9, (y) {
+                                return Container(
+                                    width: boxSize,
+                                    height: boxSize,
+                                    decoration: BoxDecoration(
+                                        border:
+                                        Border.all(color: Colors.black)),
+                                    child: OneGrid(
+                                      value: sudoku.board()?.matrix()?[x][y].getValue() ?? 0,
+                                      onPress: () {
+                                        changeColor(x,y);
+                                      },
+                                      selected : isSelected(x, y),
+                                    ));
+                              }),
+                            ),
+                          ));
+                    })))
           ],
         ),
       ),
